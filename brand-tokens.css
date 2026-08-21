@@ -1,0 +1,72 @@
+/* ============================================================
+   BRAND TOKENS — Indigo / Gold
+   Schrift: Archivo (kommerziell frei, Google Fonts / OFL).
+   Für den "Akira"-Look: Archivo im Expanded-Black-Schnitt
+   (font-weight:900; font-stretch:125%).
+   ============================================================ */
+
+:root {
+  /* --- Indigo / Blau (Basis, dunkel -> hell) --- */
+  --indigo-900: #101026;  /* tiefstes Indigo, Hintergrund-Basis */
+  --indigo-800: #141530;  /* dunkles Indigo */
+  --indigo-700: #171732;  /* Indigo Grundton */
+  --indigo-600: #23233F;  /* mittleres Indigo */
+  --indigo-500: #34365F;  /* helleres Indigo (Verlauf / Glow) */
+  --indigo-line: #4A4A7C; /* Rahmen / Linien / Outlines */
+  --steel-blue: #A6ABD4;  /* Kicker / kleine Labels */
+  --text-body:  #BFC1DB;  /* Fließtext auf Dunkel */
+  --text-hi:    #EEF1FB;  /* Headline-Text / fast weiß */
+
+  /* --- Gold / Orange (Akzent) --- */
+  --gold:      #E7AC55;   /* Haupt-Akzent: Schrift, Linien, Punkte */
+  --gold-dark: #C8892A;   /* Gold für helle Hintergründe (z.B. Print) */
+
+  /* --- Split-Tone fürs Foto-Grading (Schatten -> Lichter) --- */
+  --grade-shadow: #181A3C; /* rgb(24,26,60)   */
+  --grade-mid:    #78788E; /* rgb(120,120,142)*/
+  --grade-high:   #F2C67A; /* rgb(242,198,122)*/
+
+  /* --- Standard-Hintergrundverlauf --- */
+  --bg-gradient: radial-gradient(125% 95% at 80% -8%,
+    #34365F 0%, #23233F 32%, #171732 60%, #101026 100%);
+}
+
+/* Flächen-Hintergrund */
+.brand-bg {
+  background: var(--bg-gradient);
+  color: var(--text-hi);
+}
+
+/* Akzent-Wort ("Akira"-Gold-Element): nur auf DAS eine wichtige Wort */
+.accent {
+  font-family: "Archivo", sans-serif;
+  font-weight: 900;
+  font-stretch: 125%;          /* Expanded */
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.005em;
+}
+
+/* Typo-Hierarchie */
+.kicker {
+  font-family: "Archivo", sans-serif;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  color: var(--steel-blue);
+}
+.headline {
+  font-family: "Archivo", sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+  color: var(--text-hi);
+}
+.body {
+  font-family: "Archivo", sans-serif;
+  font-weight: 440;
+  color: var(--text-body);
+}
+
+/* Faustregel: Gold sparsam. Pro Fläche idealerweise nur EIN
+   Element in Gold (ein Wort / eine Linie / ein Punkt),
+   alles andere in Indigo-Tönen und Weiß. */
