@@ -21,6 +21,19 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Breaks up visible gradient banding on the dark radial background */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  pointer-events: none;
+  opacity: .09;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  background-size: 180px 180px;
+}
+
 img, video { max-width: 100%; display: block; }
 a { color: inherit; }
 ul { margin: 0; padding: 0; list-style: none; }
@@ -110,7 +123,13 @@ p.body { font-size: 16.5px; max-width: 56ch; }
 .section-head.wide { max-width: 720px; }
 
 /* ===== Hero ===== */
-.hero { padding-block: clamp(110px, 15vw, 150px) clamp(70px, 9vw, 110px); }
+.hero {
+  padding-block: clamp(110px, 15vw, 150px) clamp(70px, 9vw, 110px);
+  position: relative;
+  background:
+    radial-gradient(65% 55% at 84% -10%, rgba(242, 198, 122, .18) 0%, rgba(242, 198, 122, 0) 60%),
+    radial-gradient(95% 80% at 16% -18%, var(--indigo-500) 0%, var(--indigo-600) 26%, var(--indigo-700) 48%, var(--indigo-800) 68%, var(--indigo-900) 88%);
+}
 .hero-content { max-width: 640px; }
 .hero-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 36px; }
 .hero-cta .hint { font-size: 13px; color: var(--steel-blue); }
@@ -318,6 +337,19 @@ footer .fine { color: var(--steel-blue); font-size: 13px; }
 footer nav { display: flex; gap: 22px; }
 footer nav a { font-size: 13.5px; color: var(--text-body); text-decoration: none; font-weight: 600; }
 footer nav a:hover { color: var(--text-hi); }
+
+/* ===== Legal pages (Impressum/Datenschutz) ===== */
+.legal { padding-block: clamp(140px, 16vw, 180px) 100px; }
+.legal .wrap { max-width: 780px; }
+.legal h1.headline { font-size: clamp(30px, 4vw, 42px); }
+.legal h2 { font-family: "Archivo", sans-serif; font-weight: 800; font-size: 20px; color: var(--text-hi); margin-top: 44px; margin-bottom: 14px; }
+.legal h2:first-of-type { margin-top: 40px; }
+.legal p { color: var(--text-body); font-size: 15.5px; line-height: 1.65; margin: 10px 0; max-width: 68ch; }
+.legal ul { margin: 10px 0; padding-left: 20px; color: var(--text-body); font-size: 15.5px; line-height: 1.65; }
+.legal li { margin: 4px 0; }
+.legal a.inline { color: var(--gold); text-decoration: underline; text-underline-offset: 2px; }
+.legal .back { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600; color: var(--text-body); text-decoration: none; margin-bottom: 24px; }
+.legal .back:hover { color: var(--text-hi); }
 
 /* ===== Mobile nav drawer ===== */
 .mobile-drawer {
