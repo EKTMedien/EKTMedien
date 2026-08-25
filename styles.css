@@ -83,8 +83,7 @@ p.body { font-size: 16.5px; max-width: 56ch; }
 /* ===== Nav ===== */
 .nav {
   position: sticky; top: 0; z-index: 50;
-  background: rgba(16, 16, 38, .78);
-  backdrop-filter: blur(10px);
+  background: rgba(16, 16, 38, .97);
   border-bottom: 1px solid var(--indigo-line);
 }
 .nav .wrap { display: flex; align-items: center; justify-content: space-between; padding-block: 16px; }

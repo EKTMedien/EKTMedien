@@ -251,8 +251,33 @@
     raf = requestAnimationFrame(loop);
   }
 
+  function start() {
+    if (raf) return;
+    raf = requestAnimationFrame(loop);
+  }
+  function stop() {
+    if (!raf) return;
+    cancelAnimationFrame(raf);
+    raf = null;
+  }
+
   window.addEventListener("resize", resize);
   resize();
   build();
-  raf = requestAnimationFrame(loop);
+  start();
+
+  // Don't keep redrawing 60fps while the hero is scrolled out of view -
+  // that main-thread work competes with scroll compositing on the rest
+  // of the page and was contributing to jank on fast scroll.
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (entries) {
+      if (entries[0].isIntersecting) { t0 = performance.now(); start(); }
+      else stop();
+    });
+    io.observe(canvas);
+  }
+  document.addEventListener("visibilitychange", function () {
+    if (document.hidden) stop();
+    else if (canvas.getBoundingClientRect().bottom > 0) { t0 = performance.now(); start(); }
+  });
 })();
