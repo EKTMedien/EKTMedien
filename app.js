@@ -27,15 +27,16 @@
     revealEls.forEach(el => el.classList.add('is-visible'));
   }
 
-  // Lazy autoplay: any muted loop video only loads/plays once it scrolls into view
+  // Lazy autoplay: video metadata/first frame loads right away (preload="metadata")
+  // so there's never a black flash, but playback only starts once scrolled into view.
   const setupLazyAutoplay = (videos, root) => {
     if (!videos.length) return;
+    videos.forEach(video => { if (!video.src) video.src = video.dataset.src; });
     if ('IntersectionObserver' in window) {
       const io = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           const video = entry.target;
           if (entry.isIntersecting) {
-            if (!video.src) video.src = video.dataset.src;
             video.play().catch(() => {});
           } else {
             video.pause();
@@ -44,7 +45,7 @@
       }, { root, threshold: 0.25 });
       videos.forEach(video => io.observe(video));
     } else {
-      videos.forEach(video => { video.src = video.dataset.src; video.play().catch(() => {}); });
+      videos.forEach(video => video.play().catch(() => {}));
     }
   };
   setupLazyAutoplay(document.querySelectorAll('.reel-video video[data-src]'), document.getElementById('reelCarousel'));
