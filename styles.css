@@ -10,9 +10,9 @@ html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 
 body {
   margin: 0;
+  position: relative;
   background: var(--indigo-900);
   background-image: var(--bg-gradient);
-  background-attachment: fixed;
   color: var(--text-body);
   font-family: "Archivo", "Helvetica Neue", Arial, sans-serif;
   font-weight: 440;
@@ -24,7 +24,7 @@ body {
 /* Breaks up visible gradient banding on the dark radial background */
 body::before {
   content: "";
-  position: fixed;
+  position: absolute;
   inset: 0;
   z-index: 999;
   pointer-events: none;
