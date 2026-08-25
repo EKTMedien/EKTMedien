@@ -126,11 +126,13 @@ p.body { font-size: 16.5px; max-width: 56ch; }
 .hero {
   padding-block: clamp(110px, 15vw, 150px) clamp(70px, 9vw, 110px);
   position: relative;
+  overflow: hidden;
   background:
     radial-gradient(65% 55% at 84% -10%, rgba(242, 198, 122, .18) 0%, rgba(242, 198, 122, 0) 60%),
     radial-gradient(95% 80% at 16% -18%, var(--indigo-500) 0%, var(--indigo-600) 26%, var(--indigo-700) 48%, var(--indigo-800) 68%, var(--indigo-900) 88%);
 }
-.hero-content { max-width: 640px; }
+.hero-particles { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; z-index: 0; }
+.hero-content { position: relative; z-index: 1; max-width: 640px; }
 .hero-cta { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 36px; }
 .hero-cta .hint { font-size: 13px; color: var(--steel-blue); }
 .stat-row { display: flex; gap: clamp(20px, 4vw, 44px); margin-top: 48px; flex-wrap: wrap; }
