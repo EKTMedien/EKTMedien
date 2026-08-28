@@ -50,4 +50,39 @@
   };
   setupLazyAutoplay(document.querySelectorAll('.reel-video video[data-src]'), document.getElementById('reelCarousel'));
   setupLazyAutoplay(document.querySelectorAll('.format-video video[data-src]'), null);
+
+  // Drag-to-scroll for the reel carousel (mouse/trackpad; touch scrolls natively)
+  const carousel = document.getElementById('reelCarousel');
+  if (carousel) {
+    let isDown = false;
+    let startX = 0;
+    let startScroll = 0;
+    let moved = false;
+
+    const endDrag = () => {
+      isDown = false;
+      carousel.classList.remove('is-dragging');
+    };
+
+    carousel.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'touch') return;
+      isDown = true;
+      moved = false;
+      startX = e.clientX;
+      startScroll = carousel.scrollLeft;
+      carousel.classList.add('is-dragging');
+    });
+    carousel.addEventListener('pointermove', (e) => {
+      if (!isDown) return;
+      const dx = e.clientX - startX;
+      if (Math.abs(dx) > 3) moved = true;
+      carousel.scrollLeft = startScroll - dx;
+    });
+    carousel.addEventListener('pointerup', endDrag);
+    carousel.addEventListener('pointerleave', endDrag);
+    carousel.addEventListener('pointercancel', endDrag);
+    carousel.addEventListener('click', (e) => {
+      if (moved) { e.preventDefault(); e.stopPropagation(); }
+    }, true);
+  }
 })();
