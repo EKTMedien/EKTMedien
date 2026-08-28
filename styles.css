@@ -207,8 +207,9 @@ p.body { font-size: 16.5px; max-width: 56ch; }
 .proof-note { margin-top: 18px; text-align: center; color: var(--steel-blue); font-size: 13.5px; max-width: 52ch; margin-inline: auto; }
 
 /* ===== Formats grid ===== */
-.formats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 46px; }
-@media (max-width: 760px) { .formats-grid { grid-template-columns: 1fr; max-width: 420px; margin-inline: auto; } }
+.formats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-top: 46px; }
+@media (max-width: 940px) { .formats-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .formats-grid { grid-template-columns: 1fr; max-width: 420px; margin-inline: auto; } }
 .format-card .media-ph { aspect-ratio: 16 / 9; }
 .format-card .media-ph.format-video::before { display: none; }
 .format-card .media-ph video { width: 100%; height: 100%; object-fit: cover; display: block; }
