@@ -340,6 +340,8 @@ footer .fine { color: var(--steel-blue); font-size: 13px; }
 footer nav { display: flex; gap: 22px; }
 footer nav a { font-size: 13.5px; color: var(--text-body); text-decoration: none; font-weight: 600; }
 footer nav a:hover { color: var(--text-hi); }
+footer .footer-areas.wrap { padding-block: 20px 32px; border-top: 1px solid var(--indigo-line); display: block; }
+.footer-areas .fine { max-width: 70ch; }
 
 /* ===== Legal pages (Impressum/Datenschutz) ===== */
 .legal { padding-block: clamp(140px, 16vw, 180px) 100px; }
