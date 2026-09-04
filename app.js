@@ -27,29 +27,61 @@
     revealEls.forEach(el => el.classList.add('is-visible'));
   }
 
-  // Lazy autoplay: video metadata/first frame loads right away (preload="metadata")
-  // so there's never a black flash, but playback only starts once scrolled into view.
+  // Lazy loading + autoplay: a video's bytes are only fetched once it comes close
+  // to the viewport (rootMargin), and playback starts when it's actually visible.
+  // Until then the container's indigo gradient shows through, so there is no black flash.
   const setupLazyAutoplay = (videos, root) => {
     if (!videos.length) return;
-    videos.forEach(video => { if (!video.src) video.src = video.dataset.src; });
+
+    const load = (video) => {
+      if (video.src || !video.dataset.src) return;
+      video.preload = 'auto';
+      video.src = video.dataset.src;
+    };
+
     if ('IntersectionObserver' in window) {
-      const io = new IntersectionObserver((entries) => {
+      // Fetch a little before the video scrolls into view so it's ready in time.
+      const loader = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (!entry.isIntersecting) return;
+          load(entry.target);
+          loader.unobserve(entry.target);
+        });
+      }, { root, rootMargin: '400px', threshold: 0 });
+
+      const player = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           const video = entry.target;
           if (entry.isIntersecting) {
+            load(video);
             video.play().catch(() => {});
           } else {
             video.pause();
           }
         });
       }, { root, threshold: 0.25 });
-      videos.forEach(video => io.observe(video));
+
+      videos.forEach(video => { loader.observe(video); player.observe(video); });
     } else {
-      videos.forEach(video => video.play().catch(() => {}));
+      videos.forEach(video => { load(video); video.play().catch(() => {}); });
     }
   };
   setupLazyAutoplay(document.querySelectorAll('.reel-video video[data-src]'), document.getElementById('reelCarousel'));
   setupLazyAutoplay(document.querySelectorAll('.format-video video[data-src]'), null);
+  setupLazyAutoplay(document.querySelectorAll('.about-media video[data-src]'), null);
+
+  // About photos are hidden by CSS below 900px - don't download them there at all.
+  const desktopOnlyImgs = document.querySelectorAll('img[data-desktop-only][data-src]');
+  if (desktopOnlyImgs.length) {
+    const mq = window.matchMedia('(min-width: 901px)');
+    const loadImgs = () => {
+      if (!mq.matches) return;
+      desktopOnlyImgs.forEach(img => { if (!img.src) img.src = img.dataset.src; });
+      mq.removeEventListener('change', loadImgs);
+    };
+    loadImgs();
+    mq.addEventListener('change', loadImgs);
+  }
 
   // Drag-to-scroll for the reel carousel (mouse/trackpad; touch scrolls natively)
   const carousel = document.getElementById('reelCarousel');
