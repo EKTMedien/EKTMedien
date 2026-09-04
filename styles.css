@@ -332,6 +332,9 @@ details p { margin-top: 14px; font-size: 15px; max-width: 62ch; }
 .final .wrap { display: flex; flex-direction: column; align-items: flex-start; gap: 26px; padding-block: clamp(72px, 10vw, 120px); }
 .final h2.headline { max-width: 15ch; }
 .final-cta-row { display: flex; flex-wrap: wrap; gap: 14px; }
+.google-proof { margin-top: 20px; }
+.google-proof a { color: var(--gold); text-decoration: underline; text-underline-offset: 2px; }
+.google-proof a:hover { text-decoration: none; }
 
 /* ===== Footer ===== */
 footer { border-top: 1px solid var(--indigo-line); }
