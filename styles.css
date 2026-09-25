@@ -395,8 +395,8 @@ footer .footer-areas.wrap { padding-block: 20px 32px; border-top: 1px solid var(
 .footer-nap { padding-top: 6px; }
 .footer-nap p { text-align: center; }
 .footer-nap strong { color: var(--text-hi); font-weight: 700; }
-.footer-nap a, .footer-areas a { color: var(--steel-blue); text-decoration: underline; text-underline-offset: 2px; }
-.footer-nap a:hover, .footer-areas a:hover { color: var(--gold); }
+.footer-nap a { color: var(--steel-blue); text-decoration: underline; text-underline-offset: 2px; }
+.footer-nap a:hover { color: var(--gold); }
 
 /* ===== Leistungen (5 Säulen) ===== */
 .model-grid.is-five { grid-template-columns: repeat(5, 1fr); }
