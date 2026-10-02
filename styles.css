@@ -405,11 +405,10 @@ footer .footer-areas.wrap { padding-block: 20px 32px; border-top: 1px solid var(
 
 /* ===== Event-Begleitung (in #formate), bewusst kompakt ===== */
 .events { margin-top: 52px; padding-top: 30px; border-top: 1px solid var(--indigo-line); }
-.events-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 24px; }
-.events-head .body { font-size: 14.5px; margin: 0; max-width: 60ch; }
-.events-grid { display: grid; grid-template-columns: 3.16fr 3.16fr 1fr; gap: 14px; margin-top: 18px; }
-.events-grid .event-clip { aspect-ratio: 16 / 9; border-radius: 14px; }
-.events-grid .event-clip.is-vertical { aspect-ratio: 9 / 16; }
+.events-head .body { font-size: 14.5px; margin: 12px 0 0; max-width: 60ch; }
+.events-grid { display: grid; grid-template-columns: 1fr 0.63fr; gap: 14px; margin-top: 20px; }
+.events-grid .event-clip { aspect-ratio: 16 / 9; border-radius: 14px; grid-column: 1; }
+.events-grid .event-clip.is-vertical { grid-column: 2; grid-row: 1 / span 2; aspect-ratio: auto; }
 .event-clip::before { display: none; }
 .event-clip video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .event-tag {
@@ -417,9 +416,14 @@ footer .footer-areas.wrap { padding-block: 20px 32px; border-top: 1px solid var(
   background: rgba(16,16,38,.72); border: 1px solid var(--indigo-line); backdrop-filter: blur(6px);
   font-size: 10.5px; letter-spacing: .05em; color: var(--text-hi); white-space: nowrap;
 }
-.event-clip.is-vertical .event-tag { left: 8px; right: 8px; white-space: normal; text-align: center; }
+@media (min-width: 941px) {
+  .events { display: grid; grid-template-columns: minmax(220px, 1fr) 2.2fr; gap: 48px; align-items: center; }
+  .events-head .body { max-width: 30ch; }
+  .events-grid { margin-top: 0; }
+}
 @media (max-width: 940px) {
-  .events-grid { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; height: 170px; }
+  .events-grid { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; height: 260px; }
   .events-grid::-webkit-scrollbar { display: none; }
   .events-grid .event-clip { height: 100%; flex: none; scroll-snap-align: start; }
+  .events-grid .event-clip.is-vertical { order: -1; aspect-ratio: 9 / 16; }
 }
