@@ -6,7 +6,7 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
-html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; overflow-x: clip; }
 
 body {
   margin: 0;
@@ -19,6 +19,7 @@ body {
   font-size: 16px;
   line-height: 1.65;
   -webkit-font-smoothing: antialiased;
+  overflow-x: clip;
 }
 
 /* Breaks up visible gradient banding on the dark radial background */
@@ -79,6 +80,11 @@ p.body { font-size: 16.5px; max-width: 56ch; }
 .btn-ghost:hover { border-color: var(--steel-blue); background: rgba(238,241,251,.06); }
 .btn-block { width: 100%; }
 @media (prefers-reduced-motion: reduce) { .btn-gold.is-pulse { animation: none; } }
+@media (max-width: 560px) {
+  .btn { white-space: normal; text-align: center; padding: 15px 24px; }
+  .hero-cta .btn, .final-cta-row .btn, .mid-cta .btn { width: 100%; }
+  .plan .btn { padding-inline: 12px; font-size: 14.5px; }
+}
 
 /* ===== Nav ===== */
 .nav {
@@ -107,6 +113,8 @@ p.body { font-size: 16.5px; max-width: 56ch; }
 @media (max-width: 860px) {
   .nav-links { display: none; }
   .nav-cta .btn { display: none; }
+  .nav-cta { gap: 8px; }
+  .nav-cta .nav-social { gap: 6px; }
   .nav-toggle {
     display: inline-flex; align-items: center; justify-content: center;
     width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--indigo-line);
@@ -359,7 +367,7 @@ details p { margin-top: 14px; font-size: 15px; max-width: 62ch; }
 footer { border-top: 1px solid var(--indigo-line); }
 footer .wrap { padding-block: 36px; display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
 footer .fine { color: var(--steel-blue); font-size: 13px; }
-footer nav { display: flex; gap: 22px; }
+footer nav { display: flex; flex-wrap: wrap; gap: 10px 22px; }
 footer nav a { font-size: 13.5px; color: var(--text-body); text-decoration: none; font-weight: 600; }
 footer nav a:hover { color: var(--text-hi); }
 footer .footer-areas.wrap { padding-block: 20px 32px; border-top: 1px solid var(--indigo-line); display: block; }
@@ -421,9 +429,15 @@ footer .footer-areas.wrap { padding-block: 20px 32px; border-top: 1px solid var(
   .events-head .body { max-width: 30ch; }
   .events-grid { margin-top: 0; }
 }
+/* Mobil: gleiches Raster wie Desktop, Hochkant-Clip links, beide Querformat-Clips rechts
+   untereinander. Bei 1fr/.63fr ergibt die rechte Spalte fast exakt 9:16, alles bleibt sichtbar. */
 @media (max-width: 940px) {
-  .events-grid { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; height: 260px; }
-  .events-grid::-webkit-scrollbar { display: none; }
-  .events-grid .event-clip { height: 100%; flex: none; scroll-snap-align: start; }
-  .events-grid .event-clip.is-vertical { order: -1; aspect-ratio: 9 / 16; }
+  .events-grid { grid-template-columns: .63fr 1fr; }
+  .events-grid .event-clip { grid-column: 2; }
+  .events-grid .event-clip.is-vertical { grid-column: 1; }
+}
+@media (max-width: 560px) {
+  .events-grid { gap: 8px; }
+  .events-grid .event-clip { border-radius: 12px; }
+  .event-tag { left: 6px; bottom: 6px; padding: 3px 7px; font-size: 9.5px; }
 }
