@@ -1,17 +1,38 @@
 (() => {
-  // Mobile nav drawer
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Nav: background once scrolled, hides while scrolling down, returns when scrolling up
+  const nav = document.getElementById('nav');
+  let lastY = window.scrollY;
+  const onNavScroll = () => {
+    const y = window.scrollY;
+    nav.classList.toggle('is-scrolled', y > 40);
+    nav.classList.toggle('is-hidden', y > 600 && y > lastY && !document.body.classList.contains('menu-open'));
+    lastY = y;
+  };
+
+  // Mobile menu
   const toggle = document.getElementById('navToggle');
   const drawer = document.getElementById('mobileDrawer');
-  const closeBtn = document.getElementById('drawerClose');
+  const setMenu = (open) => {
+    drawer.classList.toggle('is-open', open);
+    drawer.setAttribute('aria-hidden', String(!open));
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? 'Menü schließen' : 'Menü öffnen');
+    document.body.classList.toggle('menu-open', open);
+    document.body.style.overflow = open ? 'hidden' : '';
+  };
+  toggle?.addEventListener('click', () => setMenu(!drawer.classList.contains('is-open')));
+  drawer?.querySelectorAll('a').forEach(a => a.addEventListener('click', () => setMenu(false)));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setMenu(false); });
 
-  const openDrawer = () => { drawer.classList.add('is-open'); toggle.setAttribute('aria-expanded', 'true'); };
-  const closeDrawer = () => { drawer.classList.remove('is-open'); toggle.setAttribute('aria-expanded', 'false'); };
-
-  toggle?.addEventListener('click', openDrawer);
-  closeBtn?.addEventListener('click', closeDrawer);
-  drawer?.querySelectorAll('a').forEach(a => a.addEventListener('click', closeDrawer));
-
-  // Scroll reveal
+  // Scroll reveal, children of [data-stagger] get a small cascading delay
+  document.querySelectorAll('[data-stagger]').forEach(group => {
+    [...group.children].forEach((child, i) => child.style.setProperty('--d', `${i * 0.08}s`));
+  });
+  document.querySelectorAll('.testi-grid, .google-grid, .plans, .formats-grid, .steps').forEach(group => {
+    [...group.querySelectorAll(':scope > .reveal')].forEach((child, i) => child.style.setProperty('--d', `${(i % 4) * 0.09}s`));
+  });
   const revealEls = document.querySelectorAll('.reveal');
   if ('IntersectionObserver' in window && revealEls.length) {
     const io = new IntersectionObserver((entries) => {
@@ -21,7 +42,7 @@
           io.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+    }, { threshold: 0.12, rootMargin: '0px 0px -60px 0px' });
     revealEls.forEach(el => io.observe(el));
   } else {
     revealEls.forEach(el => el.classList.add('is-visible'));
@@ -66,7 +87,10 @@
       videos.forEach(video => { load(video); video.play().catch(() => {}); });
     }
   };
-  setupLazyAutoplay(document.querySelectorAll('.reel-video video[data-src]'), document.getElementById('reelCarousel'));
+  // Reels use the viewport as root too: the carousel's overflow clips them, so a reel is only
+  // fetched once it is both on screen and scrolled into the carousel. (With the carousel as
+  // root, every reel in its first screen width loaded on page load, ~6 MB per visit.)
+  setupLazyAutoplay(document.querySelectorAll('.reel-video video[data-src]'), null);
   setupLazyAutoplay(document.querySelectorAll('.format-video video[data-src]'), null);
   setupLazyAutoplay(document.querySelectorAll('.about-media video[data-src]'), null);
 
@@ -74,16 +98,76 @@
   const desktopOnlyImgs = document.querySelectorAll('img[data-desktop-only][data-src]');
   if (desktopOnlyImgs.length) {
     const mq = window.matchMedia('(min-width: 901px)');
+    let near = false;
     const loadImgs = () => {
-      if (!mq.matches) return;
+      if (!mq.matches || !near) return;
       desktopOnlyImgs.forEach(img => { if (!img.src) img.src = img.dataset.src; });
       mq.removeEventListener('change', loadImgs);
     };
-    loadImgs();
+    // Only once the about section gets close, not on page load
+    const nearIo = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      near = true;
+      nearIo.disconnect();
+      loadImgs();
+    }, { rootMargin: '600px' });
+    nearIo.observe(desktopOnlyImgs[0].parentElement);
     mq.addEventListener('change', loadImgs);
   }
 
-  // Drag-to-scroll for the reel carousel (mouse/trackpad; touch scrolls natively)
+  // Statement text: words light up one after another while scrolling past
+  const statement = document.querySelector('[data-words]');
+  let words = [];
+  if (statement && !reduceMotion) {
+    statement.innerHTML = statement.textContent.trim().split(/\s+/).map(w => `<span class="w">${w}</span>`).join(' ');
+    words = [...statement.querySelectorAll('.w')];
+  }
+  const updateWords = () => {
+    if (!words.length) return;
+    const r = statement.getBoundingClientRect();
+    const vh = window.innerHeight;
+    const p = Math.min(1, Math.max(0, (vh * 0.85 - r.top) / (r.height + vh * 0.35)));
+    const lit = Math.round(p * words.length);
+    words.forEach((w, i) => w.classList.toggle('on', i < lit));
+  };
+
+  // Process rail fills with scroll progress; steps light up as the fill reaches them
+  const steps = document.getElementById('steps');
+  const stepEls = steps ? [...steps.querySelectorAll('.step')] : [];
+  const updateSteps = () => {
+    if (!steps) return;
+    const r = steps.getBoundingClientRect();
+    const vh = window.innerHeight;
+    const p = Math.min(1, Math.max(0, (vh * 0.7 - r.top) / (r.height * 0.9)));
+    steps.style.setProperty('--p', p.toFixed(3));
+    stepEls.forEach((s, i) => s.classList.toggle('is-active', p >= i / stepEls.length + 0.02 || p === 1));
+  };
+
+  let ticking = false;
+  const onScroll = () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      onNavScroll();
+      updateWords();
+      updateSteps();
+      ticking = false;
+    });
+  };
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  onScroll();
+
+  // Soft gold light that follows the pointer on cards
+  document.querySelectorAll('.plan, .testi').forEach(card => {
+    card.addEventListener('pointermove', (e) => {
+      const r = card.getBoundingClientRect();
+      card.style.setProperty('--mx', `${e.clientX - r.left}px`);
+      card.style.setProperty('--my', `${e.clientY - r.top}px`);
+    });
+  });
+
+  // Reel carousel: drag (mouse/trackpad; touch scrolls natively), arrows and progress bar
   const carousel = document.getElementById('reelCarousel');
   if (carousel) {
     let isDown = false;
@@ -116,5 +200,24 @@
     carousel.addEventListener('click', (e) => {
       if (moved) { e.preventDefault(); e.stopPropagation(); }
     }, true);
+
+    const step = () => {
+      const card = carousel.querySelector('.reel');
+      return card ? (card.offsetWidth + 16) * 2 : 400;
+    };
+    document.getElementById('reelPrev')?.addEventListener('click', () => carousel.scrollBy({ left: -step(), behavior: 'smooth' }));
+    document.getElementById('reelNext')?.addEventListener('click', () => carousel.scrollBy({ left: step(), behavior: 'smooth' }));
+
+    const bar = document.getElementById('reelProgress');
+    const updateBar = () => {
+      const max = carousel.scrollWidth - carousel.clientWidth;
+      const visible = carousel.clientWidth / carousel.scrollWidth;
+      bar.style.width = `${Math.max(10, visible * 100)}%`;
+      const p = max > 0 ? carousel.scrollLeft / max : 0;
+      bar.style.transform = `translateX(${p * (100 / Math.max(0.1, visible) - 100)}%)`;
+    };
+    carousel.addEventListener('scroll', updateBar, { passive: true });
+    window.addEventListener('resize', updateBar);
+    updateBar();
   }
 })();
