@@ -301,17 +301,18 @@ h1, h2, h3, p, figure, blockquote, dl, dd { margin: 0; }
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
           mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
 }
-.marquee-track { display: flex; width: max-content; animation: marquee 48s linear infinite; }
-.marquee:hover .marquee-track { animation-play-state: paused; }
+/* Läuft ununterbrochen: kein Pausieren bei Hover/Tap, keine Klick-/Auswahl-/Zieh-Möglichkeit */
+.marquee { pointer-events: none; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+.marquee img { -webkit-user-drag: none; }
+.marquee-track { display: flex; width: max-content; animation: marquee 48s linear infinite; will-change: transform; backface-visibility: hidden; }
 @keyframes marquee { to { transform: translateX(-50%); } }
 .logo-set { display: flex; align-items: center; gap: clamp(48px, 6vw, 88px); padding-right: clamp(48px, 6vw, 88px); }
 .logo-item {
   width: auto; height: auto; max-width: 140px; max-height: 28px; object-fit: contain;
   filter: grayscale(1) brightness(0) invert(1);
-  opacity: .55; transition: opacity .3s;
+  opacity: .55;
 }
 .logo-item--tall { max-height: 50px; }
-.logo-item:hover { opacity: 1; }
 
 .marquee--words { margin-top: clamp(56px, 8vw, 110px); border-block: 1px solid var(--line); padding-block: 22px; }
 .marquee--words .marquee-track { animation-duration: 36s; }
@@ -725,7 +726,9 @@ details[open]::details-content { height: auto; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
-  .marquee-track { animation: none; }
+  /* Laufbänder sollen laut Emre immer laufen (ruhige, gleichmäßige Bewegung) */
+  .marquee-track { animation-duration: 48s !important; animation-iteration-count: infinite !important; }
+  .marquee--words .marquee-track { animation-duration: 36s !important; }
   .js .reveal { opacity: 1; transform: none; }
   .statement .w { opacity: 1; }
   html { scroll-behavior: auto; }
