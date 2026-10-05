@@ -167,6 +167,36 @@
     });
   });
 
+  // Marquees: the track scrolls by -50%, so each half must be at least as wide as the screen,
+  // otherwise wide (ultrawide) monitors see a gap before the loop restarts. Repeat the set as
+  // often as needed and stretch the duration accordingly so the speed stays the same.
+  document.querySelectorAll('.marquee').forEach(mq => {
+    const track = mq.querySelector('.marquee-track');
+    const tpl = track.firstElementChild.cloneNode(true);
+    const baseDuration = parseFloat(getComputedStyle(track).animationDuration) || 48;
+    let current = 0;
+    const fill = () => {
+      const setWidth = track.firstElementChild.getBoundingClientRect().width;
+      if (!setWidth) return;
+      const perHalf = Math.max(1, Math.ceil(mq.clientWidth / setWidth));
+      if (perHalf === current) return;
+      current = perHalf;
+      track.replaceChildren(...Array.from({ length: perHalf * 2 }, (_, i) => {
+        const copy = tpl.cloneNode(true);
+        if (i > 0) {
+          copy.setAttribute('aria-hidden', 'true');
+          copy.querySelectorAll('img').forEach(img => { img.alt = ''; });
+        }
+        return copy;
+      }));
+      track.style.setProperty('animation-duration', `${baseDuration * perHalf}s`, 'important');
+    };
+    fill();
+    window.addEventListener('load', fill);
+    let resizeTimer;
+    window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(fill, 200); });
+  });
+
   // Reel carousel: drag (mouse/trackpad; touch scrolls natively), arrows and progress bar
   const carousel = document.getElementById('reelCarousel');
   if (carousel) {

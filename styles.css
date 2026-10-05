@@ -729,6 +729,7 @@ details[open]::details-content { height: auto; }
   /* Laufbänder sollen laut Emre immer laufen (ruhige, gleichmäßige Bewegung) */
   .marquee-track { animation-duration: 48s !important; animation-iteration-count: infinite !important; }
   .marquee--words .marquee-track { animation-duration: 36s !important; }
+  /* (app.js setzt die Dauer je nach Bildschirmbreite inline mit !important, das gewinnt hier) */
   .js .reveal { opacity: 1; transform: none; }
   .statement .w { opacity: 1; }
   html { scroll-behavior: auto; }
