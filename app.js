@@ -30,7 +30,7 @@
   document.querySelectorAll('[data-stagger]').forEach(group => {
     [...group.children].forEach((child, i) => child.style.setProperty('--d', `${i * 0.08}s`));
   });
-  document.querySelectorAll('.testi-grid, .google-grid, .plans, .formats-grid, .steps').forEach(group => {
+  document.querySelectorAll('.testi-row, .plans, .steps').forEach(group => {
     [...group.querySelectorAll(':scope > .reveal')].forEach((child, i) => child.style.setProperty('--d', `${(i % 4) * 0.09}s`));
   });
   const revealEls = document.querySelectorAll('.reveal');
@@ -91,8 +91,25 @@
   // fetched once it is both on screen and scrolled into the carousel. (With the carousel as
   // root, every reel in its first screen width loaded on page load, ~6 MB per visit.)
   setupLazyAutoplay(document.querySelectorAll('.reel-video video[data-src]'), null);
-  setupLazyAutoplay(document.querySelectorAll('.format-video video[data-src]'), null);
+  setupLazyAutoplay(document.querySelectorAll('.plan-video video[data-src]'), null);
   setupLazyAutoplay(document.querySelectorAll('.about-media video[data-src]'), null);
+
+  // Quick cut in the project package: the label follows the cuts (5 clips, 2 s each, see schnelldurchlauf-v1.mp4)
+  const planVideo = document.querySelector('.plan-video video');
+  const planTag = document.getElementById('planTag');
+  if (planVideo && planTag) {
+    const labels = ['Imagefilm', 'Werbespot', 'Recruiting-Video', 'Produktvideo', 'Event'];
+    const sync = () => {
+      const label = labels[Math.min(labels.length - 1, Math.floor(planVideo.currentTime / 2))];
+      if (planTag.textContent !== label) planTag.textContent = label;
+    };
+    if ('requestVideoFrameCallback' in planVideo) {
+      const onFrame = () => { sync(); planVideo.requestVideoFrameCallback(onFrame); };
+      planVideo.requestVideoFrameCallback(onFrame);
+    } else {
+      planVideo.addEventListener('timeupdate', sync);
+    }
+  }
 
   // About photos are hidden by CSS below 900px - don't download them there at all.
   const desktopOnlyImgs = document.querySelectorAll('img[data-desktop-only][data-src]');
@@ -115,22 +132,6 @@
     mq.addEventListener('change', loadImgs);
   }
 
-  // Statement text: words light up one after another while scrolling past
-  const statement = document.querySelector('[data-words]');
-  let words = [];
-  if (statement && !reduceMotion) {
-    statement.innerHTML = statement.textContent.trim().split(/\s+/).map(w => `<span class="w">${w}</span>`).join(' ');
-    words = [...statement.querySelectorAll('.w')];
-  }
-  const updateWords = () => {
-    if (!words.length) return;
-    const r = statement.getBoundingClientRect();
-    const vh = window.innerHeight;
-    const p = Math.min(1, Math.max(0, (vh * 0.85 - r.top) / (r.height + vh * 0.35)));
-    const lit = Math.round(p * words.length);
-    words.forEach((w, i) => w.classList.toggle('on', i < lit));
-  };
-
   // Process rail fills with scroll progress; steps light up as the fill reaches them
   const steps = document.getElementById('steps');
   const stepEls = steps ? [...steps.querySelectorAll('.step')] : [];
@@ -149,7 +150,6 @@
     ticking = true;
     requestAnimationFrame(() => {
       onNavScroll();
-      updateWords();
       updateSteps();
       ticking = false;
     });
