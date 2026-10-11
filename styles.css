@@ -577,7 +577,7 @@ details[open]::details-content { height: auto; }
 .chip[aria-checked="true"] { background: var(--gold); border-color: var(--gold); color: #120F08; }
 .chip[aria-checked="true"] small { color: #120F08; }
 .booking-form { display: grid; gap: 14px; }
-.booking-chosen { color: var(--text); font-weight: 600; font-size: 16px; }
+.booking-chosen { color: var(--text); font-weight: 600; font-size: 16px; scroll-margin-top: 90px; }
 .booking-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .booking-fields label { display: grid; gap: 6px; font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--steel-blue); }
 .booking-fields em { font-style: normal; text-transform: none; letter-spacing: 0; font-weight: 500; color: var(--dim); }
@@ -637,6 +637,24 @@ details[open]::details-content { height: auto; }
   .plan-tag { background: rgba(10, 10, 23, .78); }
   .booking { background: linear-gradient(180deg, #17172F 0%, #0C0C1C 100%); }
   .nav.is-scrolled { background: rgba(10, 10, 23, .94); }
+}
+
+/* Touch: Maus-Hover-Effekte bleiben auf dem iPhone nach dem Antippen „kleben" (Gold-Füllung fährt erst
+   0,5 s hoch, Chips färben sich verzögert). Auf Touch-Geräten deshalb keine Hover-Effekte, dafür sofortiges
+   Eindrück-Feedback und kein grauer iOS-Tipp-Schatten. */
+@media (hover: none) {
+  * { -webkit-tap-highlight-color: transparent; }
+  .btn-gold:hover::before { transform: translateY(101%); }
+  .btn:hover svg:not(.ico) { transform: none; }
+  .btn-ghost:hover { border-color: var(--line-2); }
+  .round-btn:hover { background: transparent; color: var(--text); border-color: var(--line-2); }
+  .icon-btn:hover { border-color: var(--line-2); color: var(--text); }
+  .chip:not([aria-checked="true"]):hover { border-color: var(--line-2); }
+  summary:hover { color: var(--text); }
+  .plan:hover::before, .testi:hover::before { opacity: 0; }
+  .btn, .chip, .round-btn, .icon-btn, .nav-toggle { transition: transform .12s ease-out; }
+  .btn:active, .chip:active, .round-btn:active, .icon-btn:active { transform: scale(.96); }
+  .btn-gold:active { background: #F3C47E; }
 }
 
 /* ============================================================

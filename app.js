@@ -1,5 +1,7 @@
 (() => {
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // iOS Safari zeigt :active-Zustände nur, wenn irgendein touchstart-Listener existiert
+  document.addEventListener('touchstart', () => {}, { passive: true });
 
   // Nav: background once scrolled, hides while scrolling down, returns when scrolling up
   const nav = document.getElementById('nav');
@@ -271,7 +273,6 @@
     const form = booking.querySelector('.booking-form');
     const chosenEl = booking.querySelector('.booking-chosen');
     const errorEl = booking.querySelector('.booking-error');
-    const submitBtn = form.querySelector('button[type="submit"]');
     const tz = 'Europe/Berlin';
     const fmt = (opts) => new Intl.DateTimeFormat('de-DE', { timeZone: tz, ...opts });
     const dayKey = fmt({ year: 'numeric', month: '2-digit', day: '2-digit' });
@@ -308,6 +309,9 @@
         chosenEl.textContent = `${longFmt.format(d)} um ${timeFmt.format(d)} Uhr · 20 Minuten per Google Meet`;
         form.hidden = false;
         errorEl.hidden = true;
+        if (window.matchMedia('(max-width: 820px)').matches) {
+          requestAnimationFrame(() => chosenEl.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+        }
       })));
       selectedSlot = null;
       form.hidden = true;
@@ -332,17 +336,28 @@
       timesEl.innerHTML = '<span class="booking-hint">Erst einen Tag wählen.</span>';
     };
 
-    const load = () => fetch(`${endpoint}?action=slots`)
-      .then(r => r.json())
-      .then(data => render(data.slots || []))
-      .catch(fail);
+    let slotsRequest = null;
+    const load = (force) => {
+      if (slotsRequest && !force) return slotsRequest;
+      slotsRequest = fetch(`${endpoint}?action=slots`)
+        .then(r => r.json())
+        .then(data => render(data.slots || []))
+        .catch(fail);
+      return slotsRequest;
+    };
 
-    const near = new IntersectionObserver(([entry]) => {
+    // Das Google-Skript braucht ~1-2 s zum Antworten. Deshalb die freien Zeiten still im Hintergrund
+    // holen, sobald die Seite fertig ist; spätestens aber, wenn jemand Richtung Kontakt scrollt/tippt.
+    const idle = window.requestIdleCallback || ((fn) => setTimeout(fn, 1200));
+    const prefetch = () => idle(() => load());
+    if (document.readyState === 'complete') prefetch();
+    else window.addEventListener('load', prefetch, { once: true });
+    document.querySelectorAll('a[href="#kontakt"]').forEach(a => a.addEventListener('pointerdown', () => load(), { once: true }));
+    new IntersectionObserver(([entry], obs) => {
       if (!entry.isIntersecting) return;
-      near.disconnect();
+      obs.disconnect();
       load();
-    }, { rootMargin: '900px' });
-    near.observe(booking);
+    }, { rootMargin: '900px' }).observe(booking);
 
     form.addEventListener('submit', (e) => {
       e.preventDefault();
@@ -359,33 +374,35 @@
         errorEl.hidden = false;
         return;
       }
-      submitBtn.disabled = true;
-      submitBtn.textContent = 'Wird reserviert …';
-      // Ohne Content-Type-Header = "simple request", kein CORS-Preflight beim Google-Skript nötig
-      fetch(endpoint, { method: 'POST', body: JSON.stringify({ ...data, slot: selectedSlot }) })
+      // Sofort "reserviert" zeigen; die Eintragung (Kalender, Einladung, Mail) dauert beim Google-Skript
+      // einige Sekunden und läuft im Hintergrund. Nur bei einem Fehler springt das Formular zurück.
+      const step = booking.querySelector('.booking-step');
+      const done = booking.querySelector('.booking-done');
+      const d = new Date(selectedSlot);
+      done.querySelector('.booking-done-text').textContent =
+        `${longFmt.format(d)} um ${timeFmt.format(d)} Uhr. Die Kalender-Einladung ist an ${data.email.trim()} unterwegs. Den Google-Meet-Link ergänzen wir darin in Kürze.`;
+      step.hidden = true;
+      form.hidden = true;
+      done.hidden = false;
+      done.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      const undo = (message, reload) => {
+        done.hidden = true;
+        step.hidden = false;
+        form.hidden = false;
+        errorEl.textContent = message;
+        errorEl.hidden = false;
+        if (reload) { form.hidden = true; load(true); }
+        booking.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+
+      // keepalive: die Reservierung kommt auch an, wenn der Kunde die Seite direkt nach dem Klick schließt
+      fetch(endpoint, { method: 'POST', keepalive: true, body: JSON.stringify({ ...data, slot: selectedSlot }) })
         .then(r => r.json())
         .then(res => {
-          if (!res.ok) {
-            errorEl.textContent = res.error || 'Das hat nicht geklappt. Bitte versuch es noch einmal.';
-            errorEl.hidden = false;
-            if (res.taken) load();
-            return;
-          }
-          booking.querySelector('.booking-step').hidden = true;
-          form.hidden = true;
-          const done = booking.querySelector('.booking-done');
-          done.querySelector('.booking-done-text').textContent =
-            `${res.when}. Die Kalender-Einladung ist an ${data.email} unterwegs. Den Google-Meet-Link ergänzen wir darin in Kürze.`;
-          done.hidden = false;
+          if (!res.ok) undo(res.error || 'Das hat nicht geklappt. Bitte versuch es noch einmal.', res.taken);
         })
-        .catch(() => {
-          errorEl.textContent = 'Das hat nicht geklappt. Bitte versuch es noch einmal oder schreib uns per WhatsApp.';
-          errorEl.hidden = false;
-        })
-        .finally(() => {
-          submitBtn.disabled = false;
-          submitBtn.textContent = 'Termin reservieren';
-        });
+        .catch(() => undo('Das hat nicht geklappt. Bitte versuch es noch einmal oder schreib uns per WhatsApp.'));
     });
   }
 })();
