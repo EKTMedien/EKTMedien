@@ -364,7 +364,7 @@
           form.hidden = true;
           const done = booking.querySelector('.booking-done');
           done.querySelector('.booking-done-text').textContent =
-            `${res.when}. Die Einladung mit dem Google-Meet-Link kommt per E-Mail an ${data.email}.`;
+            `${res.when}. Die Kalender-Einladung ist an ${data.email} unterwegs, den Google-Meet-Link findest du darin.`;
           done.hidden = false;
         })
         .catch(() => {
