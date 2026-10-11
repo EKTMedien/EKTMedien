@@ -364,7 +364,7 @@
           form.hidden = true;
           const done = booking.querySelector('.booking-done');
           done.querySelector('.booking-done-text').textContent =
-            `${res.when}. Die Kalender-Einladung ist an ${data.email} unterwegs, den Google-Meet-Link findest du darin.`;
+            `${res.when}. Die Kalender-Einladung ist an ${data.email} unterwegs. Den Google-Meet-Link ergänzen wir darin in Kürze.`;
           done.hidden = false;
         })
         .catch(() => {
