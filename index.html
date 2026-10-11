@@ -446,10 +446,39 @@
   <div class="wrap final-inner">
     <span class="label">Kostenloses Erstgespräch</span>
     <h2 class="final-title reveal">Bereit, endlich <span class="accent">SICHTBAR</span> zu werden?</h2>
-    <p class="final-lead reveal">20 Minuten, unverbindlich. Wir sagen dir ehrlich, was für dich drin ist.</p>
+    <p class="final-lead reveal">20 Minuten per Google Meet, kostenlos und unverbindlich. Such dir einfach einen Termin aus.</p>
+
+    <div class="booking reveal" id="booking" data-endpoint="https://script.google.com/macros/s/AKfycbyijxec7zfHgU_WPPahwl9b3r5ugwNmp5Wvb8Bt_mSK6Q_uetciTWrOTk7WU3FaCJHA/exec">
+      <div class="booking-step" data-step="pick">
+        <span class="label">1 — Tag wählen</span>
+        <div class="booking-days" role="radiogroup" aria-label="Tag"><span class="booking-hint">Termine werden geladen …</span></div>
+        <span class="label">2 — Uhrzeit wählen</span>
+        <div class="booking-times" role="radiogroup" aria-label="Uhrzeit"><span class="booking-hint">Erst einen Tag wählen.</span></div>
+      </div>
+      <form class="booking-form" novalidate hidden>
+        <p class="booking-chosen"></p>
+        <div class="booking-fields">
+          <label><span>Name</span><input name="name" autocomplete="name" required></label>
+          <label><span>E-Mail</span><input name="email" type="email" autocomplete="email" required></label>
+          <label><span>Telefon</span><input name="phone" type="tel" autocomplete="tel" required></label>
+          <label><span>Firma <em>(optional)</em></span><input name="company" autocomplete="organization"></label>
+          <label class="booking-hp" aria-hidden="true">Website<input name="website" tabindex="-1" autocomplete="off"></label>
+        </div>
+        <p class="booking-error" role="alert" hidden></p>
+        <button class="btn btn-gold btn-lg btn-block" type="submit">Termin reservieren</button>
+        <p class="booking-note">Mit dem Absenden stimmst du der Verarbeitung deiner Angaben zur Terminvereinbarung zu. Mehr in der <a href="datenschutz.html">Datenschutzerklärung</a>.</p>
+      </form>
+      <div class="booking-done" hidden>
+        <span class="booking-check" aria-hidden="true">✓</span>
+        <p class="booking-done-title">Termin reserviert</p>
+        <p class="booking-done-text"></p>
+      </div>
+    </div>
+
+    <p class="final-alt reveal">Lieber direkt schreiben?</p>
     <div class="final-cta reveal">
-      <a class="btn btn-gold btn-lg" href="https://wa.me/4917642937355?text=Hallo%2C%20ich%20m%C3%B6chte%20gerne%20ein%20kostenloses%20Erstgespr%C3%A4ch%20vereinbaren." target="_blank" rel="noopener"><svg aria-hidden="true" class="ico"><use href="#i-wa"/></svg>Per WhatsApp schreiben</a>
-      <a class="btn btn-ghost btn-lg" href="https://www.instagram.com/ektmedien/" target="_blank" rel="noopener"><svg aria-hidden="true" class="ico"><use href="#i-ig"/></svg>Auf Instagram schreiben</a>
+      <a class="btn btn-ghost" href="https://wa.me/4917642937355?text=Hallo%2C%20ich%20m%C3%B6chte%20gerne%20ein%20kostenloses%20Erstgespr%C3%A4ch%20vereinbaren." target="_blank" rel="noopener"><svg aria-hidden="true" class="ico"><use href="#i-wa"/></svg>WhatsApp</a>
+      <a class="btn btn-ghost" href="https://www.instagram.com/ektmedien/" target="_blank" rel="noopener"><svg aria-hidden="true" class="ico"><use href="#i-ig"/></svg>Instagram</a>
     </div>
   </div>
 </section>

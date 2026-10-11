@@ -250,4 +250,131 @@
     window.addEventListener('resize', updateBar);
     updateBar();
   }
+  // Terminbuchung: freie Zeiten kommen aus dem Google-Skript (EKT-MEDIEN/WEBSITE-BUCHUNG/Code.gs).
+  // Geladen wird erst, wenn der Kontakt-Bereich in die Nähe kommt, nicht bei jedem Seitenaufruf.
+  const booking = document.getElementById('booking');
+  if (booking) {
+    const endpoint = booking.dataset.endpoint;
+    const daysEl = booking.querySelector('.booking-days');
+    const timesEl = booking.querySelector('.booking-times');
+    const form = booking.querySelector('.booking-form');
+    const chosenEl = booking.querySelector('.booking-chosen');
+    const errorEl = booking.querySelector('.booking-error');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const tz = 'Europe/Berlin';
+    const fmt = (opts) => new Intl.DateTimeFormat('de-DE', { timeZone: tz, ...opts });
+    const dayKey = fmt({ year: 'numeric', month: '2-digit', day: '2-digit' });
+    const weekdayShort = fmt({ weekday: 'short' });
+    const dateShort = fmt({ day: '2-digit', month: '2-digit' });
+    const timeFmt = fmt({ hour: '2-digit', minute: '2-digit' });
+    const longFmt = fmt({ weekday: 'long', day: '2-digit', month: '2-digit' });
+    let byDay = new Map();
+    let selectedSlot = null;
+
+    const fail = () => {
+      daysEl.innerHTML = '<span class="booking-hint">Der Kalender ist gerade nicht erreichbar. Schreib uns einfach per WhatsApp, wir melden uns sofort.</span>';
+      timesEl.innerHTML = '';
+    };
+
+    const chip = (label, small, onClick) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'chip';
+      b.setAttribute('role', 'radio');
+      b.setAttribute('aria-checked', 'false');
+      b.innerHTML = (small ? `<small>${small}</small>` : '') + label;
+      b.addEventListener('click', () => {
+        b.parentElement.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-checked', String(c === b)));
+        onClick();
+      });
+      return b;
+    };
+
+    const showTimes = (key) => {
+      timesEl.replaceChildren(...byDay.get(key).map(iso => chip(timeFmt.format(new Date(iso)), '', () => {
+        selectedSlot = iso;
+        const d = new Date(iso);
+        chosenEl.textContent = `${longFmt.format(d)} um ${timeFmt.format(d)} Uhr · 20 Minuten per Google Meet`;
+        form.hidden = false;
+        errorEl.hidden = true;
+      })));
+      selectedSlot = null;
+      form.hidden = true;
+    };
+
+    const render = (slots) => {
+      byDay = new Map();
+      slots.forEach(iso => {
+        const key = dayKey.format(new Date(iso));
+        if (!byDay.has(key)) byDay.set(key, []);
+        byDay.get(key).push(iso);
+      });
+      if (!byDay.size) {
+        daysEl.innerHTML = '<span class="booking-hint">Gerade sind alle Termine vergeben. Schreib uns per WhatsApp, wir finden einen.</span>';
+        timesEl.innerHTML = '';
+        return;
+      }
+      daysEl.replaceChildren(...[...byDay.keys()].map(key => {
+        const d = new Date(byDay.get(key)[0]);
+        return chip(dateShort.format(d), weekdayShort.format(d).replace('.', ''), () => showTimes(key));
+      }));
+      timesEl.innerHTML = '<span class="booking-hint">Erst einen Tag wählen.</span>';
+    };
+
+    const load = () => fetch(`${endpoint}?action=slots`)
+      .then(r => r.json())
+      .then(data => render(data.slots || []))
+      .catch(fail);
+
+    const near = new IntersectionObserver(([entry]) => {
+      if (!entry.isIntersecting) return;
+      near.disconnect();
+      load();
+    }, { rootMargin: '900px' });
+    near.observe(booking);
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(form));
+      let ok = true;
+      ['name', 'email', 'phone'].forEach(n => {
+        const input = form.elements[n];
+        const bad = !input.value.trim() || (n === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.value.trim()));
+        input.setAttribute('aria-invalid', String(bad));
+        if (bad) ok = false;
+      });
+      if (!ok || !selectedSlot) {
+        errorEl.textContent = 'Bitte Name, E-Mail und Telefon ausfüllen.';
+        errorEl.hidden = false;
+        return;
+      }
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Wird reserviert …';
+      // Ohne Content-Type-Header = "simple request", kein CORS-Preflight beim Google-Skript nötig
+      fetch(endpoint, { method: 'POST', body: JSON.stringify({ ...data, slot: selectedSlot }) })
+        .then(r => r.json())
+        .then(res => {
+          if (!res.ok) {
+            errorEl.textContent = res.error || 'Das hat nicht geklappt. Bitte versuch es noch einmal.';
+            errorEl.hidden = false;
+            if (res.taken) load();
+            return;
+          }
+          booking.querySelector('.booking-step').hidden = true;
+          form.hidden = true;
+          const done = booking.querySelector('.booking-done');
+          done.querySelector('.booking-done-text').textContent =
+            `${res.when}. Die Einladung mit dem Google-Meet-Link kommt per E-Mail an ${data.email}.`;
+          done.hidden = false;
+        })
+        .catch(() => {
+          errorEl.textContent = 'Das hat nicht geklappt. Bitte versuch es noch einmal oder schreib uns per WhatsApp.';
+          errorEl.hidden = false;
+        })
+        .finally(() => {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Termin reservieren';
+        });
+    });
+  }
 })();
