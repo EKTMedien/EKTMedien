@@ -12,8 +12,10 @@
   var t0 = performance.now();
   var raf = null;
 
+  var small = window.matchMedia && window.matchMedia("(max-width: 820px)").matches;
+
   var opts = {
-    dichte: 110,
+    dichte: small ? 60 : 110,
     tempo: 4.4,
     strahlen: 3,
     lichtstaerke: 1,
@@ -29,14 +31,35 @@
   }
 
   function resize() {
-    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var dpr = small ? 1 : Math.min(window.devicePixelRatio || 1, 2);
     var r = canvas.getBoundingClientRect();
+    var cw = Math.round(Math.max(1, r.width) * dpr);
+    var ch = Math.round(Math.max(1, r.height) * dpr);
+    if (cw === canvas.width && ch === canvas.height) return; // nichts neu anlegen, wenn sich nichts geändert hat
     w = Math.max(1, r.width);
     h = Math.max(1, r.height);
-    canvas.width = Math.round(w * dpr);
-    canvas.height = Math.round(h * dpr);
+    canvas.width = cw;
+    canvas.height = ch;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
+
+  // Leuchtpunkte einmal als Bild vorzeichnen und pro Frame nur noch stempeln,
+  // statt für jeden Punkt in jedem Frame einen neuen Radialverlauf zu bauen.
+  var SPRITE = 64;
+  function makeSprite(inner, mid) {
+    var c = document.createElement("canvas");
+    c.width = c.height = SPRITE * 2;
+    var g = c.getContext("2d");
+    var gr = g.createRadialGradient(SPRITE, SPRITE, 0, SPRITE, SPRITE, SPRITE);
+    gr.addColorStop(0, rgba(inner, 1));
+    gr.addColorStop(0.4, rgba(mid, 0.28));
+    gr.addColorStop(1, rgba(opts.akzent, 0));
+    g.fillStyle = gr;
+    g.fillRect(0, 0, SPRITE * 2, SPRITE * 2);
+    return c;
+  }
+  var spriteCool = makeSprite("#EEF1FB", "#BFC1DB");
+  var spriteGold = makeSprite(opts.akzent, opts.akzent);
 
   function rnd(a, b) { return a + Math.random() * (b - a); }
 
@@ -206,7 +229,7 @@
       hg.addColorStop(0, rgba(accent, 0.16 * beamGain * puls));
       hg.addColorStop(1, rgba(accent, 0));
       ctx.fillStyle = hg;
-      ctx.fillRect(b.ox - D, b.oy - D, D * 2, D * 2);
+      ctx.fillRect(0, 0, w, h);
     });
 
     dust.forEach(function (p) {
@@ -232,15 +255,11 @@
       var base = 0.09 * p.z;
       var a = Math.min(0.95, (base + lit * 0.75 * beamGain) * twinkle);
       var r = p.r * (1 + lit * 0.5);
-      var g2 = ctx.createRadialGradient(x, y, 0, x, y, r * 4);
-      g2.addColorStop(0, rgba(lit > 0.25 ? accent : "#EEF1FB", a));
-      g2.addColorStop(0.4, rgba(lit > 0.25 ? accent : "#BFC1DB", a * 0.28));
-      g2.addColorStop(1, rgba(accent, 0));
-      ctx.fillStyle = g2;
-      ctx.beginPath();
-      ctx.arc(x, y, r * 4, 0, 6.2832);
-      ctx.fill();
+      var rr = r * 4;
+      ctx.globalAlpha = a;
+      ctx.drawImage(lit > 0.25 ? spriteGold : spriteCool, x - rr, y - rr, rr * 2, rr * 2);
     });
+    ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = "source-over";
 
     if (opts.rig) drawRig(t, speed);

@@ -48,43 +48,54 @@
     revealEls.forEach(el => el.classList.add('is-visible'));
   }
 
-  // Lazy loading + autoplay: a video's bytes are only fetched once it comes close
-  // to the viewport (rootMargin), and playback starts when it's actually visible.
-  // Until then the container's indigo gradient shows through, so there is no black flash.
+  // Lazy loading + autoplay: a video's bytes (and its small poster) are only fetched once it comes
+  // close to the viewport, and playback starts when it's actually visible. Until then the
+  // container's indigo gradient shows through, so there is no black flash.
+  // iPhones only keep a limited number of video decoders alive; paused reels that were scrolled
+  // past kept theirs, so later videos (Kampagne & Produktion) stayed blank. Videos that are far
+  // off screen are therefore released again and reloaded from the browser cache on return.
+  // If autoplay is blocked (e.g. iOS Low Power Mode), the poster stays and a tap starts the video.
   const setupLazyAutoplay = (videos, root) => {
     if (!videos.length) return;
 
     const load = (video) => {
-      if (video.src || !video.dataset.src) return;
+      if (video.dataset.poster && !video.poster) video.poster = video.dataset.poster;
+      if (video.getAttribute('src') || !video.dataset.src) return;
       video.preload = 'auto';
       video.src = video.dataset.src;
     };
+    const release = (video) => {
+      if (!video.getAttribute('src')) return;
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+    };
+    const play = (video) => {
+      video.play().catch(() => {
+        video.closest('.media, .reel')?.addEventListener('click', () => video.play().catch(() => {}), { once: true });
+      });
+    };
 
     if ('IntersectionObserver' in window) {
-      // Fetch a little before the video scrolls into view so it's ready in time.
-      const loader = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-          if (!entry.isIntersecting) return;
-          load(entry.target);
-          loader.unobserve(entry.target);
-        });
-      }, { root, rootMargin: '400px', threshold: 0 });
+      const near = new IntersectionObserver((entries) => {
+        entries.forEach(entry => (entry.isIntersecting ? load : release)(entry.target));
+      }, { root, rootMargin: '600px', threshold: 0 });
 
       const player = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           const video = entry.target;
           if (entry.isIntersecting) {
             load(video);
-            video.play().catch(() => {});
+            play(video);
           } else {
             video.pause();
           }
         });
       }, { root, threshold: 0.25 });
 
-      videos.forEach(video => { loader.observe(video); player.observe(video); });
+      videos.forEach(video => { near.observe(video); player.observe(video); });
     } else {
-      videos.forEach(video => { load(video); video.play().catch(() => {}); });
+      videos.forEach(video => { load(video); play(video); });
     }
   };
   // Reels use the viewport as root too: the carousel's overflow clips them, so a reel is only
