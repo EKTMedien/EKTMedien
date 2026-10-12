@@ -107,7 +107,7 @@
   setupLazyAutoplay(document.querySelectorAll('.plan-video video[data-src]'), null);
   setupLazyAutoplay(document.querySelectorAll('.about-media video[data-src]'), null);
 
-  // Quick cut in the project package: the label follows the cuts (5 clips, 2 s each, see schnelldurchlauf-v1.mp4)
+  // Quick cut in the project package: the label follows the cuts (5 clips, 2 s each, see schnelldurchlauf-v2.mp4)
   const planVideo = document.querySelector('.plan-video video');
   const planTag = document.getElementById('planTag');
   if (planVideo && planTag) {
