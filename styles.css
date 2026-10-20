@@ -283,6 +283,26 @@ h1, h2, h3, p, figure, blockquote, dl, dd { margin: 0; }
 .hero-stats .star { color: var(--gold); }
 .hero-stats dd { font-family: var(--f-sans); font-weight: 700; font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--steel-blue); }
 
+/* 3D-Tiefe im Hero (app.js setzt --hx/--hy = Maus -1…1, --hs = Scroll 0…1).
+   Headline neigt sich minimal im Raum, Text/Buttons/Zahlen liegen auf eigenen Ebenen; beim Scrollen
+   tritt die Headline leicht in die Tiefe zurück und alles blendet weich weg (kein Verschieben, sonst
+   schneidet der Hero-Rand die Zahlen unten ab). Über die Einzel-Eigenschaften `translate` und
+   `rotate`/`transform` auf Elementen ohne eigene Transform-Animation, damit die Einblend-Animationen
+   nichts überschreiben. */
+.hero-inner { opacity: calc(1 - var(--hs, 0) * .7); }
+.hero-title {
+  transform-origin: 40% 70%;
+  transform:
+    perspective(1200px)
+    rotateX(calc(var(--hy, 0) * -3.2deg))
+    rotateY(calc(var(--hx, 0) * 4.5deg))
+    translate3d(calc(var(--hx, 0) * 12px), calc(var(--hy, 0) * 8px), 0)
+    scale(calc(1 - var(--hs, 0) * .08));
+}
+.hero-bottom { translate: calc(var(--hx, 0) * 5px) calc(var(--hy, 0) * 3px); }
+.hero-stats { translate: calc(var(--hx, 0) * 2px) calc(var(--hy, 0) * 1px); }
+.hero-top { translate: calc(var(--hx, 0) * -4px) calc(var(--hy, 0) * -3px); }
+
 @media (max-width: 860px) {
   .hero-top { top: 84px; }
   .hero-inner { padding-bottom: 28px; }

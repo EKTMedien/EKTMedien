@@ -13,6 +13,41 @@
     lastY = y;
   };
 
+  // 3D-Tiefe im Hero: Maus (nur echte Maus/Trackpad) neigt die Headline leicht, Partikel (particles.js
+  // liest window.heroDepth) verschieben sich je nach Tiefe; beim Scrollen bleibt der Inhalt zurück.
+  // Werte werden weich nachgezogen und nur gesetzt, wenn sie sich ändern; außerhalb des Heros ruht alles.
+  const hero = document.querySelector('.hero');
+  if (hero && !reduceMotion) {
+    const depth = window.heroDepth = { x: 0, y: 0, s: 0 };
+    let tx = 0, ty = 0, visible = true, raf = 0, last = '';
+    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      hero.addEventListener('pointermove', (e) => {
+        const r = hero.getBoundingClientRect();
+        tx = ((e.clientX - r.left) / r.width) * 2 - 1;
+        ty = ((e.clientY - r.top) / r.height) * 2 - 1;
+        kick();
+      });
+      hero.addEventListener('pointerleave', () => { tx = 0; ty = 0; kick(); });
+    }
+    const tick = () => {
+      raf = 0;
+      depth.x += (tx - depth.x) * 0.07;
+      depth.y += (ty - depth.y) * 0.07;
+      depth.s = Math.min(1, Math.max(0, window.scrollY / (hero.offsetHeight || 1)));
+      const key = `${depth.x.toFixed(3)}|${depth.y.toFixed(3)}|${depth.s.toFixed(3)}`;
+      if (key !== last) {
+        last = key;
+        hero.style.setProperty('--hx', depth.x.toFixed(3));
+        hero.style.setProperty('--hy', depth.y.toFixed(3));
+        hero.style.setProperty('--hs', depth.s.toFixed(3));
+      }
+      if (visible && (Math.abs(tx - depth.x) > 0.001 || Math.abs(ty - depth.y) > 0.001)) kick();
+    };
+    function kick() { if (!raf && visible) raf = requestAnimationFrame(tick); }
+    window.addEventListener('scroll', kick, { passive: true });
+    new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; if (visible) kick(); }).observe(hero);
+  }
+
   // Mobile menu
   const toggle = document.getElementById('navToggle');
   const drawer = document.getElementById('mobileDrawer');

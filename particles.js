@@ -203,7 +203,9 @@
 
     var liveBeams = beams.map(function (b) {
       var a = b.a + Math.sin(t * 0.07 * speed + b.ph) * 0.055;
-      return { ox: b.x * w, oy: b.y * h, a: a, spread: b.spread, len: b.len * D, w: b.w };
+      var hd = window.heroDepth;
+      var bx = hd ? hd.x * -10 : 0, by = hd ? hd.y * -6 : 0; // Lichtstrahlen liegen ganz hinten
+      return { ox: b.x * w + bx, oy: b.y * h + by, a: a, spread: b.spread, len: b.len * D, w: b.w };
     });
 
     ctx.globalCompositeOperation = "lighter";
@@ -239,8 +241,12 @@
       if (p.y > 1.06) p.y = -0.04;
       if (p.x < -0.05) p.x = 1.04;
       if (p.x > 1.05) p.x = -0.04;
-      var x = (p.x + Math.sin(t * p.sp * speed + p.ph) * p.sw * 0.02) * w;
-      var y = p.y * h;
+      // Tiefe: nahe Punkte (großes z) wandern mit Maus und Scroll stärker als ferne
+      var hd = window.heroDepth;
+      var px = hd ? hd.x * p.z * 26 : 0;
+      var py = hd ? hd.y * p.z * 18 + hd.s * h * 0.32 * (1 - p.z * 0.6) : 0; // ferne Punkte bleiben beim Scrollen zurück
+      var x = (p.x + Math.sin(t * p.sp * speed + p.ph) * p.sw * 0.02) * w + px;
+      var y = p.y * h + py;
       var lit = 0;
       liveBeams.forEach(function (b) {
         var dx = x - b.ox, dy = y - b.oy;
