@@ -192,6 +192,124 @@
     stepEls.forEach((s, i) => s.classList.toggle('is-active', p >= i / stepEls.length + 0.02 || p === 1));
   };
 
+  // Kamera-Set. Alles läuft über den Scroll-Fortschritt, nicht über Zeit: wer stoppt, sieht ein Standbild.
+  const clamp01 = (v) => Math.min(1, Math.max(0, v));
+  const ease = (t) => t * t * (3 - 2 * t);
+  const tc = (frames) => {
+    const f = frames % 25, s = Math.floor(frames / 25) % 60, m = Math.floor(frames / 1500) % 60;
+    return `00:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}:${String(f).padStart(2, '0')}`;
+  };
+
+  // Objektiv: Blende (7 Lamellen) öffnet von f/16 auf f/1.4, Fokusring dreht, der Satz wird scharf,
+  // zum Schluss geht's durch die Linse in die nächste Sektion.
+  const lensSec = document.querySelector('.lens-sec');
+  let updateLens = () => {};
+  if (lensSec) {
+    const stage = lensSec.querySelector('.lens-stage');
+    const wrap = lensSec.querySelector('.lens-wrap');
+    const iris = lensSec.querySelector('.ln-iris');
+    const blades = lensSec.querySelector('.ln-blades');
+    const edge = lensSec.querySelector('.ln-edge');
+    const tcEl = lensSec.querySelector('.vf-tc');
+    const fEl = lensSec.querySelector('.vf-f');
+    const NS = 'http://www.w3.org/2000/svg';
+    const ticks = lensSec.querySelector('.ln-ticks');
+    for (let i = 0; i < 90; i++) {
+      const a = (i * 4 - 90) * Math.PI / 180, major = i % 5 === 0;
+      const l = document.createElementNS(NS, 'line');
+      const r1 = major ? 153 : 158;
+      l.setAttribute('x1', (Math.cos(a) * r1).toFixed(1)); l.setAttribute('y1', (Math.sin(a) * r1).toFixed(1));
+      l.setAttribute('x2', (Math.cos(a) * 166).toFixed(1)); l.setAttribute('y2', (Math.sin(a) * 166).toFixed(1));
+      if (major) l.setAttribute('class', 'is-major');
+      ticks.appendChild(l);
+    }
+    const nums = lensSec.querySelector('.ln-nums');
+    ['∞', '10', '5', '3', '2', '1.5', '1.2', '1', '0.8', '0.6'].forEach((n, i) => {
+      const a = (i * 24 - 90) * Math.PI / 180;
+      const t = document.createElementNS(NS, 'text');
+      t.setAttribute('x', (Math.cos(a) * 141).toFixed(1)); t.setAttribute('y', (Math.sin(a) * 141).toFixed(1));
+      t.textContent = n;
+      nums.appendChild(t);
+    });
+
+    const N = 7, R = 110, A_MIN = 13, A_MAX = 100;
+    const STOPS = ['16', '11', '8', '5.6', '4', '2.8', '2', '1.4'];
+    const pt = (x, y) => `${x.toFixed(2)} ${y.toFixed(2)}`;
+    const setIris = (o) => {
+      const a = A_MIN + (A_MAX - A_MIN) * o;
+      const phi = (1 - o) * 0.75 - Math.PI / 2;
+      const v = [];
+      for (let k = 0; k < N; k++) v.push([Math.cos(phi + k * 2 * Math.PI / N) * a, Math.sin(phi + k * 2 * Math.PI / N) * a]);
+      const poly = 'M ' + v.map(p => pt(p[0], p[1])).join(' L ') + ' Z';
+      iris.setAttribute('d', `M ${R} 0 A ${R} ${R} 0 1 0 ${-R} 0 A ${R} ${R} 0 1 0 ${R} 0 Z ${poly}`);
+      edge.setAttribute('d', poly);
+      // Lamellen-Kanten: jede Kante der Öffnung läuft als Linie weiter bis zum Rand
+      let d = '';
+      for (let k = 0; k < N; k++) {
+        const [px, py] = v[k], [qx, qy] = v[(k + 1) % N];
+        let dx = qx - px, dy = qy - py; const len = Math.hypot(dx, dy) || 1; dx /= len; dy /= len;
+        const b = px * dx + py * dy, c = px * px + py * py - R * R;
+        const t = -b + Math.sqrt(Math.max(0, b * b - c));
+        d += `M ${pt(px, py)} L ${pt(px + dx * t, py + dy * t)} `;
+      }
+      blades.setAttribute('d', d);
+      fEl.textContent = 'f/' + STOPS[Math.round(o * (STOPS.length - 1))];
+    };
+    setIris(reduceMotion ? 1 : 0);
+
+    let lastKey = '';
+    updateLens = () => {
+      if (reduceMotion) return;
+      const r = lensSec.getBoundingClientRect();
+      const vh = window.innerHeight;
+      if (r.bottom < 0 || r.top > vh) return;
+      const p = clamp01(-r.top / Math.max(1, r.height - vh));
+      const key = p.toFixed(4);
+      if (key === lastKey) return;
+      lastKey = key;
+      const open = ease(clamp01(p / 0.5));
+      const focus = ease(clamp01((p - 0.16) / 0.36));
+      const zoom = clamp01((p - 0.66) / 0.34);
+      setIris(open);
+      // Bis Bildschirmdiagonale durch die Glasfläche (Radius 110 von 400) passt
+      const glass = wrap.offsetWidth * 110 / 400;
+      const cover = Math.hypot(window.innerWidth, vh) / (2 * glass) * 1.15;
+      const z = 1 + Math.pow(zoom, 2.4) * (cover - 1);
+      const st = stage.style;
+      st.setProperty('--open', open.toFixed(3));
+      st.setProperty('--fr', `${(-150 * focus).toFixed(1)}deg`);
+      st.setProperty('--z', z.toFixed(3));
+      st.setProperty('--lo', (1 - clamp01((zoom - 0.72) / 0.28)).toFixed(3));
+      st.setProperty('--to', (focus * (1 - clamp01(zoom / 0.3))).toFixed(3));
+      st.setProperty('--tb', `${(7 * (1 - focus) + 6 * clamp01(zoom / 0.3)).toFixed(2)}px`);
+      st.setProperty('--ty', `${(24 * (1 - focus) + 30 * zoom).toFixed(1)}px`);
+      st.setProperty('--vo', (1 - clamp01(zoom / 0.45)).toFixed(3));
+      tcEl.textContent = tc(Math.round(p * 260));
+    };
+  }
+
+  // Smartphone dreht sich von der Kamera-Rückseite auf den Bildschirm, während die Arbeit-Sektion reinkommt
+  const phoneProp = document.getElementById('propPhone');
+  const updatePhone = () => {
+    if (!phoneProp) return;
+    const r = phoneProp.getBoundingClientRect();
+    const vh = window.innerHeight;
+    const pr = reduceMotion ? 1 : ease(clamp01((vh * 0.95 - r.top) / (vh * 0.55)));
+    phoneProp.style.setProperty('--pr', pr.toFixed(3));
+  };
+
+  // Filmklappe: offen, solange der Ablauf-Fortschritt vor „Drehtag" liegt, dann Klappe zu
+  const clapProp = document.getElementById('propClap');
+  const clapTc = clapProp?.querySelector('.cl-tc');
+  const updateClap = () => {
+    if (!clapProp || !steps) return;
+    const p = parseFloat(steps.style.getPropertyValue('--p')) || 0;
+    const shut = reduceMotion || p >= 1 / 3 + 0.02;
+    clapProp.style.setProperty('--cl', shut ? '0' : (1 - 0.35 * clamp01(p * 3)).toFixed(3));
+    clapProp.classList.toggle('is-shut', shut);
+    if (clapTc) clapTc.textContent = tc(Math.round(p * 600));
+  };
+
   let ticking = false;
   const onScroll = () => {
     if (ticking) return;
@@ -199,6 +317,9 @@
     requestAnimationFrame(() => {
       onNavScroll();
       updateSteps();
+      updateLens();
+      updatePhone();
+      updateClap();
       ticking = false;
     });
   };
