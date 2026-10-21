@@ -237,6 +237,14 @@ h1, h2, h3, p, figure, blockquote, dl, dd { margin: 0; }
     radial-gradient(95% 80% at 16% -18%, var(--indigo-500) 0%, var(--indigo-600) 26%, var(--indigo-700) 48%, var(--indigo-800) 68%, var(--indigo-900) 88%, var(--bg) 100%);
 }
 .hero-particles { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; z-index: 0; }
+/* Startsequenz (app.js setzt .is-ready, sobald Schriften + Layout stehen): Einblendungen warten bis dahin,
+   damit sie nicht in den ersten Seitenaufbau hinein ruckeln; die Partikel blenden danach weich ein. */
+.js:not(.is-ready) .hero-title .line > span,
+.js:not(.is-ready) .hero-bottom,
+.js:not(.is-ready) .hero-stats,
+.js:not(.is-ready) .hero-top { animation-play-state: paused; }
+.js .hero-particles { opacity: 0; transition: opacity 1.6s var(--ease) .5s; }
+.js.is-ready .hero-particles { opacity: 1; }
 .hero-inner {
   position: relative; z-index: 1;
   min-height: 100svh;
@@ -289,9 +297,10 @@ h1, h2, h3, p, figure, blockquote, dl, dd { margin: 0; }
    schneidet der Hero-Rand die Zahlen unten ab). Über die Einzel-Eigenschaften `translate` und
    `rotate`/`transform` auf Elementen ohne eigene Transform-Animation, damit die Einblend-Animationen
    nichts überschreiben. */
-.hero-inner { opacity: calc(1 - var(--hs, 0) * .7); }
+.hero-inner { opacity: calc(1 - var(--hs, 0) * .7); will-change: opacity; }
 .hero-title {
   transform-origin: 40% 70%;
+  will-change: transform; /* riesige Schrift einmal rastern, beim Scrollen nur verschieben */
   transform:
     perspective(1200px)
     rotateX(calc(var(--hy, 0) * -3.2deg))
@@ -718,6 +727,7 @@ details[open]::details-content { height: auto; }
 .lens-title {
   font-size: clamp(1.9rem, 4.2vw, 3.8rem); text-align: center; max-width: 16ch;
   opacity: var(--to, 0); filter: blur(var(--tb, 8px)); transform: translateY(var(--ty, 0px));
+  will-change: opacity, filter, transform; /* Unschärfe auf der Grafikkarte statt jedes Frame neu malen */
 }
 
 /* Sucher: Ecken + Kamera-Anzeigen am Rand der Bühne */

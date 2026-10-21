@@ -1,5 +1,21 @@
 (() => {
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Startsequenz: Die Hero-Einblendung und die Partikel starten erst, wenn Schriften und Layout stehen
+  // (.is-ready). Vorher baut der Browser die Seite zweimal komplett auf; liefen die Animationen dabei
+  // schon, sprangen sie am Anfang. Sicherheitsnetz: spätestens nach 2,5 s geht es los.
+  const rootEl = document.documentElement;
+  const readyCbs = [];
+  const whenReady = (fn) => (rootEl.classList.contains('is-ready') ? fn() : readyCbs.push(fn));
+  const markReady = () => {
+    if (rootEl.classList.contains('is-ready')) return;
+    rootEl.classList.add('is-ready');
+    readyCbs.splice(0).forEach(fn => fn());
+  };
+  const domReady = new Promise(r => (document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', r, { once: true }) : r()));
+  Promise.all([domReady, document.fonts ? document.fonts.ready : Promise.resolve()])
+    .then(() => requestAnimationFrame(() => requestAnimationFrame(markReady)));
+  setTimeout(markReady, 2500);
   // iOS Safari zeigt :active-Zustände nur, wenn irgendein touchstart-Listener existiert
   document.addEventListener('touchstart', () => {}, { passive: true });
 
@@ -20,6 +36,8 @@
   if (hero && !reduceMotion) {
     const depth = window.heroDepth = { x: 0, y: 0, s: 0 };
     let tx = 0, ty = 0, visible = true, raf = 0, last = '';
+    let heroH = hero.offsetHeight || 1; // zwischengespeichert, nicht pro Frame lesen (erzwingt sonst Layout)
+    window.addEventListener('resize', () => { heroH = hero.offsetHeight || 1; });
     if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
       hero.addEventListener('pointermove', (e) => {
         const r = hero.getBoundingClientRect();
@@ -33,7 +51,7 @@
       raf = 0;
       depth.x += (tx - depth.x) * 0.07;
       depth.y += (ty - depth.y) * 0.07;
-      depth.s = Math.min(1, Math.max(0, window.scrollY / (hero.offsetHeight || 1)));
+      depth.s = Math.min(1, Math.max(0, window.scrollY / heroH));
       const key = `${depth.x.toFixed(3)}|${depth.y.toFixed(3)}|${depth.s.toFixed(3)}`;
       if (key !== last) {
         last = key;
@@ -180,14 +198,28 @@
     mq.addEventListener('change', loadImgs);
   }
 
+  // Positionen einmal messen (Layout-Werte ohne Transforms) statt in jedem Scroll-Frame
+  // getBoundingClientRect() nach Style-Änderungen aufzurufen: das erzwang mehrmals pro Frame eine
+  // komplette Layout-Neuberechnung (Ruckeln direkt nach dem Hero). Neu gemessen wird nur bei
+  // Größenänderungen (Resize, nachladende Bilder/Schriften).
+  const geo = new Map();
+  let vh = window.innerHeight;
+  const docTop = (el) => { let t = 0; for (let n = el; n; n = n.offsetParent) t += n.offsetTop; return t; };
+  const track = (el) => { if (el) geo.set(el, { top: 0, h: 0 }); };
+  const remeasure = () => {
+    vh = window.innerHeight;
+    geo.forEach((g, el) => { g.top = docTop(el); g.h = el.offsetHeight; });
+  };
+  const topOf = (el) => geo.get(el).top - window.scrollY;
+  const heightOf = (el) => geo.get(el).h;
+
   // Process rail fills with scroll progress; steps light up as the fill reaches them
   const steps = document.getElementById('steps');
+  track(steps);
   const stepEls = steps ? [...steps.querySelectorAll('.step')] : [];
   const updateSteps = () => {
     if (!steps) return;
-    const r = steps.getBoundingClientRect();
-    const vh = window.innerHeight;
-    const p = Math.min(1, Math.max(0, (vh * 0.7 - r.top) / (r.height * 0.9)));
+    const p = Math.min(1, Math.max(0, (vh * 0.7 - topOf(steps)) / (heightOf(steps) * 0.9)));
     steps.style.setProperty('--p', p.toFixed(3));
     stepEls.forEach((s, i) => s.classList.toggle('is-active', p >= i / stepEls.length + 0.02 || p === 1));
   };
@@ -203,6 +235,7 @@
   // Objektiv: Blende (7 Lamellen) öffnet von f/16 auf f/1.4, Fokusring dreht, der Satz wird scharf,
   // zum Schluss geht's durch die Linse in die nächste Sektion.
   const lensSec = document.querySelector('.lens-sec');
+  track(lensSec);
   let updateLens = () => {};
   if (lensSec) {
     const stage = lensSec.querySelector('.lens-stage');
@@ -257,22 +290,26 @@
     };
     setIris(reduceMotion ? 1 : 0);
 
-    let lastKey = '';
+    let lastKey = '', lastOpen = -1, lastTc = '';
+    let glass = 1;
+    const measureLens = () => { glass = wrap.offsetWidth * 110 / 400; };
+    window.addEventListener('resize', measureLens);
+    measureLens();
     updateLens = () => {
       if (reduceMotion) return;
-      const r = lensSec.getBoundingClientRect();
-      const vh = window.innerHeight;
-      if (r.bottom < 0 || r.top > vh) return;
-      const p = clamp01(-r.top / Math.max(1, r.height - vh));
+      const top = topOf(lensSec), height = heightOf(lensSec);
+      if (top + height < 0 || top > vh) return;
+      const p = clamp01(-top / Math.max(1, height - vh));
       const key = p.toFixed(4);
       if (key === lastKey) return;
       lastKey = key;
       const open = ease(clamp01(p / 0.5));
       const focus = ease(clamp01((p - 0.16) / 0.36));
       const zoom = clamp01((p - 0.66) / 0.34);
-      setIris(open);
+      // Blende nur neu zeichnen, wenn sie sich sichtbar ändert (beim Durchzoomen ist sie längst offen;
+      // sonst würde das bildschirmgroße Objektiv in jedem Frame neu gerastert)
+      if (Math.abs(open - lastOpen) > 0.002 || (open === 1 && lastOpen !== 1)) { setIris(open); lastOpen = open; }
       // Bis Bildschirmdiagonale durch die Glasfläche (Radius 110 von 400) passt
-      const glass = wrap.offsetWidth * 110 / 400;
       const cover = Math.hypot(window.innerWidth, vh) / (2 * glass) * 1.15;
       const z = 1 + Math.pow(zoom, 2.4) * (cover - 1);
       const st = stage.style;
@@ -284,17 +321,17 @@
       st.setProperty('--tb', `${(7 * (1 - focus) + 6 * clamp01(zoom / 0.3)).toFixed(2)}px`);
       st.setProperty('--ty', `${(24 * (1 - focus) + 30 * zoom).toFixed(1)}px`);
       st.setProperty('--vo', (1 - clamp01(zoom / 0.45)).toFixed(3));
-      tcEl.textContent = tc(Math.round(p * 260));
+      const tcText = tc(Math.round(p * 260));
+      if (tcText !== lastTc) { tcEl.textContent = tcText; lastTc = tcText; }
     };
   }
 
   // Smartphone dreht sich von der Kamera-Rückseite auf den Bildschirm, während die Arbeit-Sektion reinkommt
   const phoneProp = document.getElementById('propPhone');
+  track(phoneProp);
   const updatePhone = () => {
     if (!phoneProp) return;
-    const r = phoneProp.getBoundingClientRect();
-    const vh = window.innerHeight;
-    const pr = reduceMotion ? 1 : ease(clamp01((vh * 0.95 - r.top) / (vh * 0.55)));
+    const pr = reduceMotion ? 1 : ease(clamp01((vh * 0.95 - topOf(phoneProp)) / (vh * 0.55)));
     phoneProp.style.setProperty('--pr', pr.toFixed(3));
   };
 
@@ -324,7 +361,10 @@
     });
   };
   window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', onScroll);
+  window.addEventListener('resize', () => { remeasure(); onScroll(); });
+  remeasure();
+  if ('ResizeObserver' in window) new ResizeObserver(() => { remeasure(); onScroll(); }).observe(document.body);
+  window.addEventListener('load', () => { remeasure(); onScroll(); }, { once: true });
   onScroll();
 
   // Soft gold light that follows the pointer on cards
@@ -360,7 +400,8 @@
       }));
       track.style.setProperty('animation-duration', `${baseDuration * perHalf}s`, 'important');
     };
-    fill();
+    // Erst messen/klonen, wenn die Hero-Einblendung läuft und die Seite steht (statt beim Seitenaufbau)
+    whenReady(() => (window.requestIdleCallback || setTimeout)(fill));
     window.addEventListener('load', fill);
     let resizeTimer;
     window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(fill, 200); });

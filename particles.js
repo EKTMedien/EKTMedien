@@ -286,17 +286,35 @@
     raf = null;
   }
 
+  // Erst zeichnen, wenn die Seite fertig aufgebaut ist (app.js setzt .is-ready): sonst konkurriert
+  // das Zeichnen mit dem ersten Seitenaufbau und die Hero-Einblendung ruckelt. Die Fläche blendet dann weich ein.
+  var root = document.documentElement;
+  var ready = root.classList.contains("is-ready");
+  var inView = true;
+  var startRaw = start;
+  start = function () { if (ready && inView) startRaw(); };
+
   window.addEventListener("resize", resize);
   resize();
   build();
   start();
+  if (!ready) {
+    new MutationObserver(function (_, obs) {
+      if (!root.classList.contains("is-ready")) return;
+      obs.disconnect();
+      ready = true;
+      t0 = performance.now();
+      start();
+    }).observe(root, { attributes: true, attributeFilter: ["class"] });
+  }
 
   // Don't keep redrawing 60fps while the hero is scrolled out of view -
   // that main-thread work competes with scroll compositing on the rest
   // of the page and was contributing to jank on fast scroll.
   if ("IntersectionObserver" in window) {
     var io = new IntersectionObserver(function (entries) {
-      if (entries[0].isIntersecting) { t0 = performance.now(); start(); }
+      inView = entries[0].isIntersecting;
+      if (inView) { t0 = performance.now(); start(); }
       else stop();
     });
     io.observe(canvas);
