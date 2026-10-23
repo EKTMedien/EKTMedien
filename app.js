@@ -160,13 +160,17 @@
   setupLazyAutoplay(document.querySelectorAll('.plan-video video[data-src]'), null);
   setupLazyAutoplay(document.querySelectorAll('.about-media video[data-src]'), null);
 
-  // Quick cut in the project package: the label follows the cuts (5 clips, 2 s each, see schnelldurchlauf-v2.mp4)
+  // Quick cut in the project package: the label follows the cuts of schnelldurchlauf-v3.mp4
+  // (Revive-Sequenz aus dem Original, Sek. 11,72–17,36: Shirt-Rücken, Nähmaschine, Stick-Logo, Logo-Karte)
   const planVideo = document.querySelector('.plan-video video');
   const planTag = document.getElementById('planTag');
   if (planVideo && planTag) {
     const labels = ['Imagefilm', 'Werbespot', 'Recruiting-Video', 'Produktvideo', 'Event'];
+    const cuts = [0, 1.96, 3.96, 9.56, 11.48]; // Startzeit jedes Clips in Sekunden
     const sync = () => {
-      const label = labels[Math.min(labels.length - 1, Math.floor(planVideo.currentTime / 2))];
+      let i = cuts.length - 1;
+      while (i > 0 && planVideo.currentTime < cuts[i]) i--;
+      const label = labels[i];
       if (planTag.textContent !== label) planTag.textContent = label;
     };
     if ('requestVideoFrameCallback' in planVideo) {
