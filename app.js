@@ -160,13 +160,14 @@
   setupLazyAutoplay(document.querySelectorAll('.plan-video video[data-src]'), null);
   setupLazyAutoplay(document.querySelectorAll('.about-media video[data-src]'), null);
 
-  // Quick cut in the project package: the label follows the cuts of schnelldurchlauf-v4.mp4
+  // Quick cut in the project package: the label follows the cuts of schnelldurchlauf-v5.mp4
+  // (Produktvideo = Jaguar Signature: Hand mit Titel + goldene Schere)
   // (Revive-Sequenz aus dem Original, Sek. 11,72–17,36: Shirt-Rücken, Nähmaschine, Stick-Logo, Logo-Karte)
   const planVideo = document.querySelector('.plan-video video');
   const planTag = document.getElementById('planTag');
   if (planVideo && planTag) {
     const labels = ['Imagefilm', 'Werbespot', 'Recruiting-Video', 'Produktvideo', 'Event'];
-    const cuts = [0, 1.96, 4.32, 9.92, 11.92]; // Startzeit jedes Clips in Sekunden
+    const cuts = [0, 1.96, 4.32, 9.92, 14.44]; // Startzeit jedes Clips in Sekunden
     const sync = () => {
       let i = cuts.length - 1;
       while (i > 0 && planVideo.currentTime < cuts[i]) i--;
