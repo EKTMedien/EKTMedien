@@ -166,8 +166,8 @@
   const planVideo = document.querySelector('.plan-video video');
   const planTag = document.getElementById('planTag');
   if (planVideo && planTag) {
-    const labels = ['Imagefilm', 'Werbespot', 'Recruiting-Video', 'Produktvideo', 'Event'];
-    const cuts = [0, 1.96, 4.32, 9.92, 14.44]; // Startzeit jedes Clips in Sekunden
+    const labels = ['Recruiting-Video', 'Eventfilm', 'Imagefilm', 'Werbespot', 'Produktvideo'];
+    const cuts = [0, 5.6, 14.64, 16.6, 18.96]; // Startzeit jedes Clips in Sekunden (v7: Revive, Nexum, Imagefilm, Werbespot, Jaguar)
     const sync = () => {
       let i = cuts.length - 1;
       while (i > 0 && planVideo.currentTime < cuts[i]) i--;
