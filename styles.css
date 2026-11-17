@@ -344,17 +344,19 @@ h1, h2, h3, p, figure, blockquote, dl, dd { margin: 0; }
 }
 .logo-item--tall { max-height: 50px; }
 
-.marquee--words { margin-top: clamp(56px, 8vw, 110px); border-block: 1px solid var(--line); padding-block: 22px; }
-.marquee--words .marquee-track { animation-duration: 36s; }
-.word-set { display: flex; align-items: center; gap: clamp(28px, 4vw, 56px); padding-right: clamp(28px, 4vw, 56px); }
-.word-set span {
-  font-weight: 800; font-stretch: 125%; text-transform: uppercase;
-  font-size: clamp(2rem, 5.2vw, 4.6rem); line-height: 1; letter-spacing: -.01em;
-  color: transparent; -webkit-text-stroke: 1px rgba(238, 241, 251, .45);
-  white-space: nowrap;
+/* Fokus-Band unter den Reels: ein Thema statt Branchenliste */
+.focus-band { margin-top: clamp(56px, 8vw, 110px); border-block: 1px solid var(--line); padding-block: clamp(34px, 5vw, 64px); }
+.focus-line {
+  margin: 0; font-weight: 800; font-stretch: 125%; text-transform: uppercase;
+  font-size: clamp(1.7rem, 5vw, 4.4rem); line-height: 1.04; letter-spacing: -.01em; color: var(--text);
 }
-.word-set span:nth-child(4n+1) { color: var(--text); -webkit-text-stroke: 0; }
-.word-set i { font-style: normal; color: var(--gold); font-size: clamp(1rem, 2vw, 1.6rem); }
+.focus-line .accent { color: var(--gold); display: block; }
+.focus-steps { display: flex; flex-wrap: wrap; gap: 10px 26px; margin: clamp(18px, 2.4vw, 28px) 0 0; padding: 0; list-style: none; }
+.focus-steps li {
+  display: flex; align-items: center; gap: 26px;
+  font-weight: 600; font-size: .82rem; letter-spacing: .16em; text-transform: uppercase; color: rgba(238, 241, 251, .62);
+}
+.focus-steps li:not(:last-child)::after { content: "✦"; color: var(--gold); font-size: .9rem; letter-spacing: 0; }
 
 /* ============================================================
    SECTIONS
@@ -364,7 +366,7 @@ h1, h2, h3, p, figure, blockquote, dl, dd { margin: 0; }
 
 /* Arbeiten */
 .work { padding-bottom: 0; overflow: hidden; }
-.work .marquee--words { border-bottom: 0; }
+.work .focus-band { border-bottom: 0; }
 .media {
   position: relative; overflow: hidden; border-radius: var(--radius);
   background: linear-gradient(150deg, var(--grade-shadow) 0%, #2A2B4A 60%, #3A3550 100%);
